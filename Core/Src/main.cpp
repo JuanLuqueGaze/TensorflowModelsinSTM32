@@ -378,14 +378,14 @@ int main(void)
  
    if(HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
     {
-    error_Handler();
+    error_handler();
     }
 
   /** Activate the Over-Drive mode
   */
   if(HAL_PWREx_EnableOverDrive() != HAL_OK)
   {
-    error_Handler();
+    error_handler();
   }
 
   /** Initializes the CPU, AHB and APB buses clocks
@@ -398,7 +398,7 @@ int main(void)
 
   if(HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_6) != HAL_OK)
   {
-    error_Handler();
+    error_handler();
   }
 }
 
