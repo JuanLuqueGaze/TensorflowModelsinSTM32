@@ -66,6 +66,15 @@ namespace
  uint8_t tensor_arena[kTensorArenaSize];
  }// namespace
 
+// This constant represents the range of x values our model was trained on,
+ // which is from 0 to (2 * Pi). We approximate Pi to avoid requiring
+ // additional libraries.
+ extern const float INPUT_RANGE = 2.f * 3.14159265359f;
+ // NOTE: extern is used because lcd.c also uses this.
+ 
+
+
+
  const uint16_t INFERENCE_PER_CYCLE = 70;
  
 
