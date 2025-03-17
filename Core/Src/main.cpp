@@ -101,7 +101,8 @@ TIM_HandleTypeDef htim12;
 
 UART_HandleTypeDef huart1;
 UART_HandleTypeDef huart6;
-
+UART_HandleTypeDef DebugUartHandler;
+ 
 SDRAM_HandleTypeDef hsdram1;
 
 osThreadId defaultTaskHandle;
@@ -136,7 +137,7 @@ static void MX_TIM3_Init(void);
 static void MX_TIM5_Init(void);
 static void MX_TIM8_Init(void);
 static void MX_TIM12_Init(void);
-static void MX_USART1_UART_Init(void);
+static void uart1_init(void);
 static void MX_USART6_UART_Init(void);
 void StartDefaultTask(void const * argument);
 
@@ -206,7 +207,7 @@ int main(void)
   MX_TIM5_Init();
   MX_TIM8_Init();
   MX_TIM12_Init();
-  MX_USART1_UART_Init();
+  uart1_init();
   MX_USART6_UART_Init();
   MX_FATFS_Init();
   /* USER CODE BEGIN 2 */
@@ -1364,34 +1365,26 @@ static void MX_TIM12_Init(void)
   * @param None
   * @retval None
   */
-static void MX_USART1_UART_Init(void)
+static void uart1_init(void)
 {
 
-  /* USER CODE BEGIN USART1_Init 0 */
+  DebugUartHandler.Instance        = DISCOVERY_COM1;
+  DebugUartHandler.Init.BaudRate   = 9600;
+  DebugUartHandler.Init.WordLength = UART_WORDLENGTH_8B;
+  DebugUartHandler.Init.StopBits   = UART_STOPBITS_1;
+  DebugUartHandler.Init.Parity     = UART_PARITY_NONE;
+  DebugUartHandler.Init.HwFlowCtl  = UART_HWCONTROL_NONE;
+  DebugUartHandler.Init.Mode       = UART_MODE_TX_RX;
+  DebugUartHandler.AdvancedInit.AdvFeatureInit = UART_ADVFEATURE_NO_INIT;
 
-  /* USER CODE END USART1_Init 0 */
-
-  /* USER CODE BEGIN USART1_Init 1 */
-
-  /* USER CODE END USART1_Init 1 */
-  huart1.Instance = USART1;
-  huart1.Init.BaudRate = 115200;
-  huart1.Init.WordLength = UART_WORDLENGTH_8B;
-  huart1.Init.StopBits = UART_STOPBITS_1;
-  huart1.Init.Parity = UART_PARITY_NONE;
-  huart1.Init.Mode = UART_MODE_TX_RX;
-  huart1.Init.HwFlowCtl = UART_HWCONTROL_NONE;
-  huart1.Init.OverSampling = UART_OVERSAMPLING_16;
-  huart1.Init.OneBitSampling = UART_ONE_BIT_SAMPLE_DISABLE;
-  huart1.AdvancedInit.AdvFeatureInit = UART_ADVFEATURE_NO_INIT;
-  if (HAL_UART_Init(&huart1) != HAL_OK)
+  if(HAL_UART_DeInit(&DebugUartHandler) != HAL_OK)
   {
-    Error_Handler();
+    error_handler();
   }
-  /* USER CODE BEGIN USART1_Init 2 */
-
-  /* USER CODE END USART1_Init 2 */
-
+  if(HAL_UART_Init(&DebugUartHandler) != HAL_OK)
+  {
+      error_handler();
+  }
 }
 
 /**
