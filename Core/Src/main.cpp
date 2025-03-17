@@ -23,6 +23,7 @@
 #include "fatfs.h"
 #include "usb_host.h"
 #include "stm32746g_discovery.h"
+#include "lcd.h"
 #include "sine_model.h"
 #include "tensorflow/lite/micro/kernels/all_ops_resolver.h"
 #include "tensorflow/lite/micro/micro_error_reporter.h"
@@ -234,6 +235,7 @@ int main(void)
   MX_TIM8_Init();
   MX_TIM12_Init();
   uart1_init();
+  LCD_Init();
   MX_USART6_UART_Init();
   MX_FATFS_Init();
 
@@ -335,6 +337,8 @@ int main(void)
 
          // Read the predicted y value from the model's output tensor
          float y_val = output->data.f[0];
+
+         LCD_Output(error_reporter, x_val, y_val);
        }
   }
   /* USER CODE END 3 */
@@ -374,14 +378,14 @@ int main(void)
  
    if(HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
     {
-    Error_Handler();
+    error_Handler();
     }
 
   /** Activate the Over-Drive mode
   */
   if(HAL_PWREx_EnableOverDrive() != HAL_OK)
   {
-    Error_Handler();
+    error_Handler();
   }
 
   /** Initializes the CPU, AHB and APB buses clocks
@@ -394,7 +398,7 @@ int main(void)
 
   if(HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_6) != HAL_OK)
   {
-    Error_Handler();
+    error_Handler();
   }
 }
 
