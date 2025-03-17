@@ -23,6 +23,12 @@
 #include "fatfs.h"
 #include "usb_host.h"
 #include "stm32746g_discovery.h"
+#include "sine_model.h"
+#include "tensorflow/lite/micro/kernels/all_ops_resolver.h"
+#include "tensorflow/lite/micro/micro_error_reporter.h"
+#include "tensorflow/lite/micro/micro_interpreter.h"
+#include "tensorflow/lite/schema/schema_generated.h"
+#include "tensorflow/lite/version.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -45,6 +51,23 @@
 /* USER CODE END PM */
 
 /* Private variables ---------------------------------------------------------*/
+namespace
+ {
+ tflite::ErrorReporter* error_reporter = nullptr;
+ const tflite::Model* model = nullptr;
+ tflite::MicroInterpreter* interpreter = nullptr;
+ TfLiteTensor* input = nullptr;
+ TfLiteTensor* output = nullptr;
+ 
+ // Create an area of memory to use for input, output, and intermediate arrays.
+ // Finding the minimum value for your model may require some trial and error.
+ constexpr uint32_t kTensorArenaSize = 2 * 1024;
+ uint8_t tensor_arena[kTensorArenaSize];
+ }// namespace
+
+ const uint16_t INFERENCE_PER_CYCLE = 70;
+ 
+
 #if defined ( __ICCARM__ ) /*!< IAR Compiler */
 #pragma location=0x2004c000
 ETH_DMADescTypeDef  DMARxDscrTab[ETH_RX_DESC_CNT]; /* Ethernet Rx DMA Descriptors */
@@ -157,6 +180,9 @@ void StartDefaultTask(void const * argument);
 int main(void)
 {
 
+      // Enable the CPU Cache
+      cpu_cache_enable();
+ 
   /* USER CODE BEGIN 1 */
 
   /* USER CODE END 1 */
@@ -210,6 +236,49 @@ int main(void)
   uart1_init();
   MX_USART6_UART_Init();
   MX_FATFS_Init();
+
+
+
+  static tflite::MicroErrorReporter micro_error_reporter;
+  error_reporter = &micro_error_reporter;
+
+  // Map the model into a usable data structure. This doesn't involve any
+  // copying or parsing, it's a very lightweight operation.
+  model = tflite::GetModel(sine_model);
+
+  if(model->version() != TFLITE_SCHEMA_VERSION)
+  {
+    TF_LITE_REPORT_ERROR(error_reporter,
+                           "Model provided is schema version %d not equal "
+                           "to supported version %d.",
+                           model->version(), TFLITE_SCHEMA_VERSION);
+      return 0;
+  }
+
+  // This pulls in all the operation implementations we need.
+  static tflite::ops::micro::AllOpsResolver resolver;
+
+  // Build an interpreter to run the model with.
+  static tflite::MicroInterpreter static_interpreter(model, resolver, tensor_arena, kTensorArenaSize, error_reporter);
+  interpreter = &static_interpreter;
+
+  // Allocate memory from the tensor_arena for the model's tensors.
+  TfLiteStatus allocate_status = interpreter->AllocateTensors();
+  if (allocate_status != kTfLiteOk)
+  {
+      TF_LITE_REPORT_ERROR(error_reporter, "AllocateTensors() failed");
+      return 0;
+  }
+
+  // Obtain pointers to the model's input and output tensors.
+  input = interpreter->input(0);
+  output = interpreter->output(0);
+
+  // We are dividing the whole input range with the number of inference
+  // per cycle we want to show to get the unit value. We will then multiply
+  // the unit value with the current position of the inference
+  float unitValuePerDevision = INPUT_RANGE / static_cast<float>(INFERENCE_PER_CYCLE);
+
   /* USER CODE BEGIN 2 */
 
   /* USER CODE END 2 */
