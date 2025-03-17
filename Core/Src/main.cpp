@@ -162,6 +162,7 @@ static void MX_TIM5_Init(void);
 static void MX_TIM8_Init(void);
 static void MX_TIM12_Init(void);
 static void uart1_init(void);
+void handle_output(tflite::ErrorReporter* error_reporter, float x_value, float y_value);
 static void MX_USART6_UART_Init(void);
 void StartDefaultTask(void const * argument);
 
@@ -338,12 +339,23 @@ int main(void)
          // Read the predicted y value from the model's output tensor
          float y_val = output->data.f[0];
 
-         LCD_Output(error_reporter, x_val, y_val);
+         handle_output(error_reporter, x_val, y_val);
        }
   }
   /* USER CODE END 3 */
 }
 
+
+void handle_output(tflite::ErrorReporter* error_reporter, float x_value, float y_value)
+ {
+ 	// Log the current X and Y values
+ 	TF_LITE_REPORT_ERROR(error_reporter, "x_value: %f, y_value: %f\n", x_value, y_value);
+ 
+ 	// A custom function can be implemented and used here to do something with the x and y values.
+ 	// In my case I will be plotting sine wave on an LCD.
+ 	LCD_Output(x_value, y_value);
+ }
+ 
 /**
   * @brief System Clock Configuration
   * @retval None
